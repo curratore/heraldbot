@@ -31,29 +31,26 @@ func NewHerald(token string) (*Herald, error) {
 		"/help": h.GetUsage,
 		"/kill": h.KillCommand,
 		"/log":  h.GetOutput,
-		//	"/stats":  h.GetOutput,
-		"/status": h.CommandStatus,
-		"/who":    h.GetUsers,
+		//	"/stats":  ,
+		"/who": h.GetUsers,
 	}
 
 	return h, nil
 }
 
 func (h *Herald) Run() error {
-	fmt.Println(h)
 	h.start = time.Now()
 
 	go h.listen()
 	h.print()
-
 	return nil
 }
 
 func (h *Herald) listen() error {
 	messages := make(chan telebot.Message)
 	h.bot.Listen(messages, 1*time.Second)
-
 	for m := range messages {
+		fmt.Println(m.Text)
 		if h, ok := h.Handlers[m.Text]; ok {
 			h(m)
 		}
@@ -77,9 +74,17 @@ func (h *Herald) print() error {
 func (h *Herald) RegisterUser(m telebot.Message) error {
 	h.Users = append(h.Users)
 
+	if m.Sender.Username != "" {
+		reply := fmt.Sprintf(
+			"Hello, %s! You logged on this herald session.",
+			m.Sender.Username,
+		)
+		return h.bot.SendMessage(m.Chat, reply, nil)
+	}
+
 	reply := fmt.Sprintf(
 		"Hello, %s! You logged on this herald session.",
-		m.Sender.Username,
+		m.Sender.FirstName,
 	)
 
 	return h.bot.SendMessage(m.Chat, reply, nil)
@@ -88,23 +93,19 @@ func (h *Herald) RegisterUser(m telebot.Message) error {
 func (h *Herald) GetUsage(m telebot.Message) error {
 
 	reply := fmt.Sprintf(
-		`herald-bot %s herald-bot is a Telegram bot that can do 
-	Usage:
+		`herald-bot %s herald-bot is a Telegram bot.
 
-	Where: on telegram chat     
+	Usage: 
+		   /hi 		-> to log on bot
+		   /usage	-> show this helps
+		   /who		-> show the users connected
+		   /kill	-> ends bot
+		   /status  -> status of this bot
+
+	Where: on telegram chat 
 	`, VERSION)
-	os.Exit(1)
 
 	return h.bot.SendMessage(m.Chat, reply, nil)
-}
-
-func (h *Herald) GetUsers(m telebot.Message) error {
-	var names []string
-	for _, user := range h.Users {
-		names = append(names, user.Username)
-	}
-
-	return h.bot.SendMessage(m.Chat, strings.Join(names, ","), nil)
 }
 
 func (h *Herald) KillCommand(m telebot.Message) error {
@@ -114,7 +115,7 @@ func (h *Herald) KillCommand(m telebot.Message) error {
 		if user.ID == m.Chat.ID {
 			h.bot.SendMessage(m.Chat, msg, nil)
 		} else {
-			h.bot.SendMessage(m.Chat, fmt.Sprintf("%s by %s", msg, m.Chat.Username), nil)
+			h.bot.SendMessage(m.Chat, fmt.Sprintf("%s by %s", msg, m.Chat.FirstName), nil)
 		}
 	}
 	os.Exit(0)
@@ -122,26 +123,27 @@ func (h *Herald) KillCommand(m telebot.Message) error {
 	return nil
 }
 
-func (h *Herald) CommandStatus(m telebot.Message) error {
-	return h.bot.SendMessage(m.Chat,
-		fmt.Sprintf("*Start at:* %s\n*Uptime: %s", h.start, time.Since(h.start)),
-		&telebot.SendOptions{
-			ParseMode:             telebot.ModeMarkdown,
-			DisableWebPagePreview: true,
-		},
-	)
+func (h *Herald) GetUsers(m telebot.Message) error {
+	var names []string
+	for _, user := range h.Users {
+		if user.Username != "" {
+			names = append(names, user.Username)
+		}
+		names = append(names, user.FirstName)
+	}
+
+	return h.bot.SendMessage(m.Chat, strings.Join(names, ","), nil)
 }
 
 func (h *Herald) GetOutput(m telebot.Message) error {
-	file, err := telebot.NewFile("/tmp/sloth.jpg")
+	file, err := telebot.NewFile("/var/log/pacman.log")
 	if err != nil {
 		return nil
 	}
 
 	document := &telebot.Document{
 		File:     file,
-		FileName: "sloth.jpg",
-		Mime:     "image/jpeg",
+		FileName: "pacman.log",
 	}
 
 	return h.bot.SendDocument(m.Chat, document, nil)

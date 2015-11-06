@@ -5,10 +5,9 @@ const (
 )
 
 func main() {
-	h, err := NewHerald("token")
+	h, err := NewHerald("TOKEN")
 	if err != nil {
 		panic(err)
 	}
-
 	h.Run()
 }
