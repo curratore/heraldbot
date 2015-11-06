@@ -5,7 +5,7 @@ const (
 )
 
 func main() {
-	h, err := NewHerald("139682629:AAE6123HxiwNlFMKr366mIGlZSYq_uV1Nn0")
+	h, err := NewHerald("token")
 	if err != nil {
 		panic(err)
 	}

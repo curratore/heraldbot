@@ -31,7 +31,7 @@ func NewHerald(token string) (*Herald, error) {
 		"/help": h.GetUsage,
 		"/kill": h.KillCommand,
 		"/log":  h.GetOutput,
-		//		"/stats":  h.GetOutput,
+		//	"/stats":  h.GetOutput,
 		"/status": h.CommandStatus,
 		"/who":    h.GetUsers,
 	}
@@ -79,8 +79,21 @@ func (h *Herald) RegisterUser(m telebot.Message) error {
 
 	reply := fmt.Sprintf(
 		"Hello, %s! You logged on this herald session.",
-		m.Sender.FirstName,
+		m.Sender.Username,
 	)
+
+	return h.bot.SendMessage(m.Chat, reply, nil)
+}
+
+func (h *Herald) GetUsage(m telebot.Message) error {
+
+	reply := fmt.Sprintf(
+		`herald-bot %s herald-bot is a Telegram bot that can do 
+	Usage:
+
+	Where: on telegram chat     
+	`, VERSION)
+	os.Exit(1)
 
 	return h.bot.SendMessage(m.Chat, reply, nil)
 }
@@ -88,7 +101,7 @@ func (h *Herald) RegisterUser(m telebot.Message) error {
 func (h *Herald) GetUsers(m telebot.Message) error {
 	var names []string
 	for _, user := range h.Users {
-		names = append(names, user.FirstName)
+		names = append(names, user.Username)
 	}
 
 	return h.bot.SendMessage(m.Chat, strings.Join(names, ","), nil)
@@ -101,7 +114,7 @@ func (h *Herald) KillCommand(m telebot.Message) error {
 		if user.ID == m.Chat.ID {
 			h.bot.SendMessage(m.Chat, msg, nil)
 		} else {
-			h.bot.SendMessage(m.Chat, fmt.Sprintf("%s by %s", msg, m.Chat.FirstName), nil)
+			h.bot.SendMessage(m.Chat, fmt.Sprintf("%s by %s", msg, m.Chat.Username), nil)
 		}
 	}
 	os.Exit(0)
@@ -119,8 +132,6 @@ func (h *Herald) CommandStatus(m telebot.Message) error {
 	)
 }
 
-//func (h *Herald) GetStats(m telebot.Message)
-
 func (h *Herald) GetOutput(m telebot.Message) error {
 	file, err := telebot.NewFile("/tmp/sloth.jpg")
 	if err != nil {
@@ -136,15 +147,4 @@ func (h *Herald) GetOutput(m telebot.Message) error {
 	return h.bot.SendDocument(m.Chat, document, nil)
 }
 
-func (h *Herald) GetUsage(m telebot.Message) error {
-
-	reply := fmt.Sprintf(
-		`herald-bot %s herald-bot is a Telegram bot that can do 
-	Usage:
-
-	Where: on telegram chat     
-	`, VERSION)
-	os.Exit(1)
-
-	return h.bot.SendMessage(m.Chat, reply, nil)
-}
+//func (h *Herald) GetStats(m telebot.Message)
